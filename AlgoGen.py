@@ -11,9 +11,9 @@ import math
 
 # Fonction pour calculer l'évaluation d'individu (Fitness)
 def fitness(individu):
-    fit = np.sum(individu[0:len(individu)-1], dtype = np.uint8)
+    fit = np.sum(individu[0:len(individu)-2], dtype = np.uint8)
    # print(individu[0:len(individu)-1])
-    individu[len(individu)-1]=fit
+    individu[len(individu)-2]=fit
     return fit
 
 
@@ -29,8 +29,9 @@ def croiser_monopoint(parent1, parent2  , probCroisement):
         fitness(fils1)
         fils2= np.concatenate((parent2[:rand] , parent1[rand:]), axis = None)
         fitness(fils2)
+
         return fils1, fils2, True
-    return [0]*(tailleIndividu+1),[0]*(tailleIndividu+1),False
+    return [0]*(tailleIndividu+2),[0]*(tailleIndividu+2),False
 
 #Fonction pour faire le croisement uniforme avec une probabilité probCroisement
 def croiser_uniforme(parent1,parent2 , probCroisement):
@@ -39,7 +40,7 @@ def croiser_uniforme(parent1,parent2 , probCroisement):
         fils2=[]
         if ( random.random() <= probCroisement):
             #faire le croisement
-            for i in range(tailleIndividu+1):
+            for i in range(tailleIndividu+2):
                 if bool(np.random.randint(2)) :
                     fils1.append(parent1[i])
                     fils2.append(parent2[i])
@@ -49,17 +50,13 @@ def croiser_uniforme(parent1,parent2 , probCroisement):
             fitness(fils1)
             fitness(fils2)
             return np.array(fils1), np.array(fils2), True
-        return np.array([0]*(tailleIndividu+1)), np.array([0]*(tailleIndividu+1)), False
+        return np.array([0]*(tailleIndividu+2)), np.array([0]*(tailleIndividu+2)), False
     
 # Fonction pour faire la mutation bit flip => changer chaque bit avec une probabilité prob
 def mutation_bit_flip(parent1,parent2,probMutation):
     fils1= []
     fils2=[]
-    print('======= Avant mutation ======')
-    print(parent1)
-    print(parent2)
-
-
+  
     for x in parent1:
         if (random.random() < probMutation):
             fils1.append( abs(x-1)) #(not(x.astype(bool))).astype(int))
@@ -74,21 +71,22 @@ def mutation_bit_flip(parent1,parent2,probMutation):
 
     fitness(fils1)
     fitness(fils2)
-    print('======= apres mutation ======')
-
-    
+    fils1[-1]=0
+    fils2[-1]=0
     return np.array(fils1) , np.array(fils2) , True 
 
 
 def mutation_k_flips(parent1,parent2,probMutation,k):
     fils1= parent1
     fils2= parent2
+
     rands = list (range (tailleIndividu))
     for i in range(k):
         random.shuffle(rands)
         if(random.random() < probMutation):
             fils1[rands[-1]] = abs(fils1[rands[-1]]-1)
         rands.pop()
+
     rands = list (range (tailleIndividu))
     for i in range(k):
         random.shuffle(rands)
@@ -97,6 +95,8 @@ def mutation_k_flips(parent1,parent2,probMutation,k):
         rands.pop()
     fitness(fils1)
     fitness(fils2)
+    fils1[-1]=0
+    fils2[-1]=0
     return fils1,fils2,True
 # AG  ( taille de population = 20, taille d'individu, initmode, selection , croisement, proba croisement, mutation , probalité mutation, proba mutation , insertion, nb generation)
 
@@ -130,13 +130,13 @@ init = 1
 
 # =========== INITIALISATION =======================
 # initialiser la population avec des zeros
-population = np.zeros( (taillePopulation,tailleIndividu+1),  dtype=np.uint8 )
+population = np.zeros( (taillePopulation,tailleIndividu+2),  dtype=np.uint8 )
 
 if init != 0:
     # Initialiser avec des valeurs aléatoires
-    population = np.random.rand(taillePopulation,tailleIndividu+1 )
+    population = np.concatenate( (np.random.rand(taillePopulation,tailleIndividu+1 ) , np.zeros((taillePopulation,1))), axis=1)
     population = (population > 0.5).astype(int)
-    
+    #population[:,tailleIndividu+2]=0
 
     # Calculer Fitness des individus
     for i in population:
@@ -202,11 +202,13 @@ print(fils2)
 
 """
 
+#fils1, fils2, estCrois = croiser_monopoint(parent1,parent2,1)
+
 #fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
 
 #fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
 
-fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
+#fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
 
 
 
