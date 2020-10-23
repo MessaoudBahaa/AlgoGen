@@ -16,6 +16,8 @@ def fitness(individu):
     individu[len(individu)-1]=fit
     return fit
 
+
+#Fonction pour faire le croisement monopoint avec une probabilité probCroisement
 def croiser_monopoint(parent1, parent2  , probCroisement):
     if ( random.random() <= probCroisement):
         #faire croisement
@@ -27,10 +29,10 @@ def croiser_monopoint(parent1, parent2  , probCroisement):
         fitness(fils1)
         fils2= np.concatenate((parent2[:rand] , parent1[rand:]), axis = None)
         fitness(fils2)
-        return fils1, fils2, 1
-    return [0]*(tailleIndividu+1),[0]*(tailleIndividu+1),0
+        return fils1, fils2, True
+    return [0]*(tailleIndividu+1),[0]*(tailleIndividu+1),False
 
-
+#Fonction pour faire le croisement uniforme avec une probabilité probCroisement
 def croiser_uniforme(parent1,parent2 , probCroisement):
         
         fils1= []
@@ -46,9 +48,56 @@ def croiser_uniforme(parent1,parent2 , probCroisement):
                     fils2.append(parent1[i])
             fitness(fils1)
             fitness(fils2)
-            return np.array(fils1), np.array(fils2), 1
-        return np.array([0]*(tailleIndividu+1)), np.array([0]*(tailleIndividu+1)),0
+            return np.array(fils1), np.array(fils2), True
+        return np.array([0]*(tailleIndividu+1)), np.array([0]*(tailleIndividu+1)), False
     
+# Fonction pour faire la mutation bit flip => changer chaque bit avec une probabilité prob
+def mutation_bit_flip(parent1,parent2,probMutation):
+    fils1= []
+    fils2=[]
+    print('======= Avant mutation ======')
+    print(parent1)
+    print(parent2)
+
+
+    for x in parent1:
+        if (random.random() < probMutation):
+            fils1.append( abs(x-1)) #(not(x.astype(bool))).astype(int))
+        else:
+            fils1.append(x)
+    
+    for x in parent2:
+        if (random.random() < probMutation):
+            fils2.append( abs(x-1))# (not(x.astype(bool))).astype(int))
+        else:
+            fils2.append(x)
+
+    fitness(fils1)
+    fitness(fils2)
+    print('======= apres mutation ======')
+
+    
+    return np.array(fils1) , np.array(fils2) , True 
+
+
+def mutation_k_flips(parent1,parent2,probMutation,k):
+    fils1= parent1
+    fils2= parent2
+    rands = list (range (tailleIndividu))
+    for i in range(k):
+        random.shuffle(rands)
+        if(random.random() < probMutation):
+            fils1[rands[-1]] = abs(fils1[rands[-1]]-1)
+        rands.pop()
+    rands = list (range (tailleIndividu))
+    for i in range(k):
+        random.shuffle(rands)
+        if(random.random() < probMutation):
+            fils2[rands[-1]] = abs(fils2[rands[-1]]-1)
+        rands.pop()
+    fitness(fils1)
+    fitness(fils2)
+    return fils1,fils2,True
 # AG  ( taille de population = 20, taille d'individu, initmode, selection , croisement, proba croisement, mutation , probalité mutation, proba mutation , insertion, nb generation)
 
 # Demmarrer avec 100 bits ensuite on peut changer
@@ -94,7 +143,7 @@ if init != 0:
         fitness(i)
 
     # Ordonner la population suivant la derniere colonne (fitness)
-    ind = np.argsort( population[:,-1] *-1)
+    ind = np.argsort( population[:,tailleIndividu] *-1)
     population= population[ind]
 
 population= population.astype(int)
@@ -153,10 +202,15 @@ print(fils2)
 
 """
 
-fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
+#fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
+
+#fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
+
+fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
+
+
 
 print(fils1)
 print(fils2)
-
 print('Finished')
 
