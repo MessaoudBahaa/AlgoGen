@@ -71,23 +71,28 @@ def mutation_bit_flip(parent1,parent2,probMutation):
 
     fitness(fils1)
     fitness(fils2)
+
+    #Mettre a jour l'age
     fils1[-1]=0
     fils2[-1]=0
     return np.array(fils1) , np.array(fils2) , True 
 
-
+# Fonction pour fair des mutation K-flips: 1-flip, 2-flip, 3-flip
 def mutation_k_flips(parent1,parent2,probMutation,k):
     fils1= parent1
     fils2= parent2
-
+    #list contenant les indices a choisir aléatoirement
     rands = list (range (tailleIndividu))
+    #Muter le premier fils
     for i in range(k):
         random.shuffle(rands)
         if(random.random() < probMutation):
             fils1[rands[-1]] = abs(fils1[rands[-1]]-1)
         rands.pop()
 
+    #list contenant les indices a choisir aléatoirement
     rands = list (range (tailleIndividu))
+    #Muter le deuxieme fils
     for i in range(k):
         random.shuffle(rands)
         if(random.random() < probMutation):
@@ -95,6 +100,8 @@ def mutation_k_flips(parent1,parent2,probMutation,k):
         rands.pop()
     fitness(fils1)
     fitness(fils2)
+
+    # mettre a jour l'age
     fils1[-1]=0
     fils2[-1]=0
     return fils1,fils2,True
@@ -124,7 +131,9 @@ def mutation_k_flips(parent1,parent2,probMutation,k):
 #             - fichier externe : valeur de meilleur solution pour chaque iteration // Nom fichier important
 
 # parameter
-taillePopulation = 20 
+
+
+taillePopulation = 10 
 tailleIndividu = 10
 init = 1
 
@@ -187,7 +196,7 @@ for i in range (5):
 # ================== CROISEMENT ==============
 print('---------------- THIS IS NEW --------------------------------')
 print(population)
-
+print('---------------- THESE ARE PARENTS --------------------------------')
 print(parent1)
 print(parent2)
 fils1 = np.zeros((1,tailleIndividu+1)).astype(int)
@@ -206,12 +215,48 @@ print(fils2)
 
 #fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
 
-#fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
+fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
 
 #fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
 
 
+# insertion suivant la fitness
 
+# Ordonner la population suivant l'avant derniere colonne (fitness)
+ind = np.argsort( population[:,tailleIndividu] *-1)
+population= population[ind]
+# supprimer les individus les plus mauvais 
+population=population[:-2] 
+
+# Mettre a jour l'age de la population par fitness
+population[:,-1]=population[:,-1]+1
+
+
+
+# insertion suivant l'age
+# Ordonner la population suivant la derniere colonne (age de l'individu)
+ind = np.argsort( population[:,tailleIndividu+1] *-1)
+population= population[ind]
+# supprimer les individus les plus mauvais par age
+population=population[:-2] 
+
+
+#np.concatenate((population ,fils1),axis=1)
+
+
+print (np.array([fils1,fils2]))
+
+# remplacer les individus les plus mauvais 
+population = np.append(population,np.array([fils1,fils2]),axis=0) # here were a problem 
+
+
+
+#sauvgarde
+
+
+print('---------------- THIS THE NEW POP --------------------------------')
+print(population)
+print('---------------- THESE ARE CHILDREN --------------------------------')
 print(fils1)
 print(fils2)
 print('Finished')
