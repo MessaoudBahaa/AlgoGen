@@ -11,7 +11,7 @@ import math
 
 # Fonction pour calculer l'évaluation d'individu (Fitness)
 def fitness(individu):
-    fit = np.sum(individu[0:len(individu)-2], dtype = np.uint8)
+    fit = np.sum(individu[0:len(individu)-2], dtype = np.uint32)
    # print(individu[0:len(individu)-1])
     individu[len(individu)-2]=fit
     return fit
@@ -23,7 +23,7 @@ def croiser_monopoint(parent1, parent2  , probCroisement):
     if ( random.random() <= probCroisement):
         #faire croisement
         rand=random.randint(1,tailleIndividu)
-        print (rand)
+        #print (rand)
 
       
         fils1= np.concatenate((parent1[:rand] , parent2[rand:]), axis = None)
@@ -55,25 +55,27 @@ def croiser_uniforme(parent1,parent2 , probCroisement):
     
 # Fonction pour faire la mutation bit flip => changer chaque bit avec une probabilité prob
 def mutation_bit_flip(parent1,parent2,probMutation):
-    
+    tailleIndividu = len(parent1)-2
     fils1= []
     fils2=[]
-  
-    for x in parent1:
-        if (random.random() < probMutation):
-            fils1.append( abs(x-1)) #(not(x.astype(bool))).astype(int))
-        else:
-            fils1.append(x)
-    
-    for x in parent2:
-        if (random.random() < probMutation):
-            fils2.append( abs(x-1))# (not(x.astype(bool))).astype(int))
-        else:
-            fils2.append(x)
+    if (random.random() < probMutation):
+        for x in parent1:
+            if (random.random() < (1/tailleIndividu)):
+                fils1.append( abs(x-1)) #(not(x.astype(bool))).astype(int))
+            else:
+                fils1.append(x)
+        
+        for x in parent2:
+            if (random.random() < (1/tailleIndividu)):
+                fils2.append( abs(x-1))# (not(x.astype(bool))).astype(int))
+            else:
+                fils2.append(x)
 
-    fitness(fils1)
-    fitness(fils2)
-    return np.array(fils1) , np.array(fils2) , True 
+        fitness(fils1)
+        fitness(fils2)
+        return np.array(fils1), np.array(fils2), True
+    return parent1, parent2, False
+    #return np.array(fils1) , np.array(fils2) , True 
 
 # Fonction pour fair des mutation K-flips: 1-flip, 2-flip, 3-flip
 def mutation_k_flips(parent1,parent2,probMutation,k):
@@ -85,16 +87,17 @@ def mutation_k_flips(parent1,parent2,probMutation,k):
     #Muter le premier fils
     for i in range(k):
         random.shuffle(rands)
-        if(random.random() < probMutation):
+        if(random.random() <= probMutation):
             fils1[rands[-1]] = abs(fils1[rands[-1]]-1)
         rands.pop()
 
     #list contenant les indices a choisir aléatoirement
+    rands=[]
     rands = list (range (tailleIndividu))
     #Muter le deuxieme fils
     for i in range(k):
         random.shuffle(rands)
-        if(random.random() < probMutation):
+        if(random.random() <= probMutation):
             fils2[rands[-1]] = abs(fils2[rands[-1]]-1)
         rands.pop()
     fitness(fils1)
@@ -128,7 +131,7 @@ def mutation_k_flips(parent1,parent2,probMutation,k):
 
 # parameter
 
-def AG  ( taillePopulation =100 , tailleIndividu = 10, init = 1, selection = 0 , croisement = 0 , prob_croisement = 0, mutation = 0 , prob_mutation = 0 , insertion = 1 , nb_generation = 100):
+def AG  ( taillePopulation =10 , tailleIndividu = 10, init = 1, selection = 0 , croisement = 0 , prob_croisement = 0, mutation = 0 , prob_mutation = 0 , insertion = 1 , nb_generation = 100,print_log=1, save = 1, plot=1, nom_fichier="data" ):
     """
     taillePopulation : la taille de la population  # par defaut 100
     tailleIndividu : la taille de l'individu # par defaut 10 
@@ -155,7 +158,17 @@ def AG  ( taillePopulation =100 , tailleIndividu = 10, init = 1, selection = 0 ,
         0 : remplacer les individus les plus agés
         1 : remplacer les individus les plus mauvais # la valeur par defaut
     nb_generation : nombre de generation auquel on veut arreter l'algorithme génetique (critère d'arret) # la valeur par defaut 100
-    sauvgarde : ....
+    print_log : afficher ou non le log de l'execution 
+        0 : ne pas afficher
+        1 : afficher
+    save : sauvegarder ou pas l'hitorique des iterations
+        0 : ne pas sauvgarder
+        1 : sauvgarder # la valeur par defaut 
+    plot : tracer le graphe des iterations en fonction de meilleur individu
+        0 : ne pas tracer le graphe
+        1 : tracer le graphe
+    nom_fichier : string contenant le nom du fichier de données nom_fichier".txt" et le nom de graph nom_fichier".png" # la valeur par defaut "data"
+ 
     """
 
     # =========== INITIALISATION =======================
@@ -167,8 +180,10 @@ def AG  ( taillePopulation =100 , tailleIndividu = 10, init = 1, selection = 0 ,
 
 
     # initialiser la population avec des zeros
-    population = np.zeros( (taillePopulation,tailleIndividu+2),  dtype=np.uint8 )
-
+    population = np.zeros( (taillePopulation,tailleIndividu+2),  dtype=np.uint32 )
+    nom_fichier = nom_fichier+"_pop"+str(taillePopulation)+"_ind"+str(tailleIndividu)+"_init"+str(init)+"_select"+str(selection)+"_crois"+str(croisement) + "_pc"+str(prob_croisement )+"_mut"+str( mutation )+"_pm"+str( prob_mutation )+ "_insert"+str( insertion )+"_iter" + str(nb_generation)
+    f = None
+    if (bool(save) or bool(plot)): f = open(nom_fichier, "w") 
     if init != 0:
         # Initialiser avec des valeurs aléatoires
         population = np.concatenate( (np.random.rand(taillePopulation,tailleIndividu+1 ) , np.zeros((taillePopulation,1))), axis=1)
@@ -184,180 +199,222 @@ def AG  ( taillePopulation =100 , tailleIndividu = 10, init = 1, selection = 0 ,
         population= population[ind]
 
     population= population.astype(int)
-    # ============ SELECTION =====================================
-    """
-    selection : mode de selection
-        0 : 2 meilleurs individus
-        1 : 2 au hasard 
-        2 : 2 meilleurs parmi 5 au hasard # la valeur par defaut
-    """
-    if (selection == 0):
-        # Choisir les 2 meilleurs 
-        parent1=population[0]
-        parent2=population[1]
-    
-    elif (selection == 1):
-        # Choisir 2 au hazard 
-        rand=random.randint(0,taillePopulation-1)
 
-        parent1=population[rand]
 
-        rand=random.randint(0,taillePopulation-2)
+    # ============ DEBUT DE LA BOUCLE =====================================
+    trouve = False
+    it = 0
+    its =[]
+    bests =[]
+    while ( not(trouve) and it<nb_generation ):
+        it= it +1 
+        # ============ SELECTION =====================================
+        """
+        selection : mode de selection
+            0 : 2 meilleurs individus
+            1 : 2 au hasard 
+            2 : 2 meilleurs parmi 5 au hasard # la valeur par defaut
+        """
+        if (selection == 0):
+            # Choisir les 2 meilleurs 
+            parent1=population[0]
+            parent2=population[1]
+        
+        elif (selection == 1):
+            # Choisir 2 au hazard 
+            rand=random.randint(0,taillePopulation-1)
 
-        parent2= (np.delete(population,rand,0))[rand]
-            
+            parent1=population[rand]
 
-    elif (selection == 2):
-        # Choisir 2 meilleurs de 5 au hasard 
-        populationSheet=population
+            rand=random.randint(0,taillePopulation-2)
 
-        parent1 = np.zeros((1,tailleIndividu+1)).astype(int)
-        parent2 = parent1
-
-        for i in range (5):
-            rand=random.randint(0,taillePopulation-1-i)
-            if  fitness(populationSheet[rand]) >= fitness(parent1)  :
+            parent2= (np.delete(population,rand,0))[rand]
                 
-                if fitness(parent1) >= fitness(parent2):
-                    parent2 = parent1 
-                parent1 = populationSheet[rand]
-            elif fitness(populationSheet[rand]) >= fitness(parent2) :
-                parent2 = populationSheet[rand]
-            populationSheet= np.delete(populationSheet,rand,0)
-    else : 
-        print('valeur de selection non reconnu')
+
+        elif (selection == 2):
+            # Choisir 2 meilleurs de 5 au hasard 
+            populationSheet=population
+
+            parent1 = np.zeros((1,tailleIndividu+1)).astype(int)
+            parent2 = parent1
+
+            for i in range (5):
+                rand=random.randint(0,taillePopulation-1-i)
+                if  fitness(populationSheet[rand]) >= fitness(parent1)  :
+                    
+                    if fitness(parent1) >= fitness(parent2):
+                        parent2 = parent1 
+                    parent1 = populationSheet[rand]
+                elif fitness(populationSheet[rand]) >= fitness(parent2) :
+                    parent2 = populationSheet[rand]
+                populationSheet= np.delete(populationSheet,rand,0)
+        else : 
+            print('valeur de selection non reconnu')
 
 
-    # ==================== CROISEMENT =======================
+        # ==================== CROISEMENT =======================
+        """
+        print('---------------- THIS IS THE POP --------------------------------')
+        print(population)
+        print('---------------- THESE ARE PARENTS --------------------------------')
+        print(parent1)
+        print(parent2)
+        
+        """
+        # les deux fils
+        fils1 = np.zeros((1,tailleIndividu+1)).astype(int)
+        fils2 = fils1
 
-    print('---------------- THIS IS THE POP --------------------------------')
-    print(population)
-    print('---------------- THESE ARE PARENTS --------------------------------')
-    print(parent1)
-    print(parent2)
-    
-    # les deux fils
-    fils1 = np.zeros((1,tailleIndividu+1)).astype(int)
-    fils2 = fils1
-
-    """
-    croisement : type de croisement à effectuer 
-        0 : ne pas effectuer croisement # la valeur par defaut
-        1 : effectuer un croisement mono-point
-        2 : effectuer un croisement uniforme
-    prob_croisement : probabilité de croisement, valeurs réelles entre 0 et 1 # la valeur par defaut 0
-    """
-    estCrois = False
-    if (croisement == 0): 
-        # ne rien faire (pas de croisement)
-        fils1 = parent1
-        fils2 = parent2
-    elif (croisement == 1):
-        # faire un croisement mono point
-        fils1, fils2, estCrois = croiser_monopoint(parent1,parent2,prob_croisement)
-    elif (croisement == 2):
-        # faire un croisement uniforme
-        fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,prob_croisement)
-    else : 
-        print('valeur de croisement non reconnu')
-        fils1 = parent1
-        fils2 = parent2
+        """
+        croisement : type de croisement à effectuer 
+            0 : ne pas effectuer croisement # la valeur par defaut
+            1 : effectuer un croisement mono-point
+            2 : effectuer un croisement uniforme
+        prob_croisement : probabilité de croisement, valeurs réelles entre 0 et 1 # la valeur par defaut 0
+        """
+        estCrois = False
+        if (croisement == 0): 
+            # ne rien faire (pas de croisement)
+            fils1 = parent1
+            fils2 = parent2
+        elif (croisement == 1):
+            # faire un croisement mono point
+            fils1, fils2, estCrois = croiser_monopoint(parent1,parent2,prob_croisement)
+        elif (croisement == 2):
+            # faire un croisement uniforme
+            fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,prob_croisement)
+        else : 
+            print('valeur de croisement non reconnu')
+            fils1 = parent1
+            fils2 = parent2
 
 
-    # ====================== MUTATION ====================
-    """
-    mutation :  type de mutation à effectuer 
-        0 : ne pas effectuer croisement # la valeur par defaut 
-        1 : 1-flip mutation
-        2 : 3-flip mutation
-        3 : 5-flip mutation 
-        4 : bit flip mutation : changer chaque bit 
-    prob_mutation : probabilité de mutation, valeurs réelles entre 0 et 1 # la valeur par defaut 0
-    """
-    estMute = False
-    if (mutation == 0 ):
-        # ne pas faire mutation
+        # ====================== MUTATION ====================
+        """
+        mutation :  type de mutation à effectuer 
+            0 : ne pas effectuer croisement # la valeur par defaut 
+            1 : 1-flip mutation
+            2 : 3-flip mutation
+            3 : 5-flip mutation 
+            4 : bit flip mutation : changer chaque bit 
+        prob_mutation : probabilité de mutation, valeurs réelles entre 0 et 1 # la valeur par defaut 0
+        """
         estMute = False
-    elif (mutation == 1 ):
-        # faire une mutation 1-flip
-        fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,1)
-    elif (mutation == 2 ):
-        # faire une mutation 3-flip
-        fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,3)
-    elif (mutation == 3 ):
-        # faire une mutation 5-flip
-        fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,5)
-    elif (mutation == 4 ):
-        # faire mutation bit flip
-        fils1, fils2, estMute = mutation_bit_flip(fils1,fils2, prob_mutation)
-    else : 
-        print('valeur de mutation non reconnu')
-    
-    #Mettre a jour l'age des nouveaux fils si un croisement ou une mutation a été effectué
-    fils1[-1]=0
-    fils2[-1]=0
-    print('---------------- THESE ARE CHILDREN --------------------------------')
-    print(fils1)
-    print(fils2)
-    #fils1, fils2, estCrois = croiser_monopoint(parent1,parent2,1)
-
-    #fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
-
-    #fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
-
-    #fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
-
-    # ====================== INSERTION ====================
-
-    """
-    insertion : mode d'insertion 
-        0 : remplacer les individus les plus agés
-        1 : remplacer les individus les plus mauvais # la valeur par defaut
-    """
-    if (estCrois or estMute):
-        # mettre à jour la population
-        if (insertion == 1):
-            # insertion suivant la fitness (les plus mauvais)
-            # Ordonner la population suivant l'avant derniere colonne (fitness)
-            ind = np.argsort( population[:,tailleIndividu] *-1)
-            population= population[ind]
-            # supprimer les individus les plus mauvais 
-            population=population[:-2]
-            # Mettre a jour l'age de la population 
-            population[:,-1]=population[:,-1]+1 
-
-        elif (insertion == 0):
-            # insertion suivant l'age (les plus agés)
-            # Ordonner la population suivant la derniere colonne (age de l'individu)
-            ind = np.argsort( population[:,tailleIndividu+1] *-1)
-            population= population[ind]
-            # supprimer les individus les plus mauvais par age
-            population=population[:-2]
-            # Mettre a jour l'age de la population 
-            population[:,-1]=population[:,-1]+1
+        if (mutation == 0 ):
+            # ne pas faire mutation
+            estMute = False
+        elif (mutation == 1 ):
+            # faire une mutation 1-flip
+            fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,1)
+        elif (mutation == 2 ):
+            # faire une mutation 3-flip
+            fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,3)
+        elif (mutation == 3 ):
+            # faire une mutation 5-flip
+            fils1, fils2, estMute = mutation_k_flips(fils1,fils2,prob_mutation,5)
+        elif (mutation == 4 ):
+            # faire mutation bit flip
+            fils1, fils2, estMute = mutation_bit_flip(fils1,fils2, prob_mutation)
         else : 
             print('valeur de mutation non reconnu')
+        
+        #Mettre a jour l'age des nouveaux fils si un croisement ou une mutation a été effectué
+        fils1[-1]=0
+        fils2[-1]=0
+        #print('---------------- THESE ARE CHILDREN --------------------------------')
+        #print(fils1)
+        #print(fils2)
+        #fils1, fils2, estCrois = croiser_monopoint(parent1,parent2,1)
 
-        # remplacer les individus supprimés par les nouveaux enfants 
-        population = np.append(population,np.array([fils1,fils2]),axis=0) 
-    else : 
-        # ne rien faire (pas d'insertion de nouveaux individus)
-        # Mettre a jour l'age de la population 
-        population[:,-1]=population[:,-1]+1
+        #fils1, fils2, estCrois = croiser_uniforme(parent1,parent2,1)
+
+        #fils1, fils2, estMute = mutation_bit_flip(parent1,parent2,1)
+
+        #fils1, fils2, estMute = mutation_k_flips(parent1,parent2,1,3)
+
+        # ====================== INSERTION ====================
+
+        """
+        insertion : mode d'insertion 
+            0 : remplacer les individus les plus agés
+            1 : remplacer les individus les plus mauvais # la valeur par defaut
+        """
+        if (estCrois or estMute):
+            # mettre à jour la population
+            if (insertion == 1):
+                # insertion suivant la fitness (les plus mauvais)
+                # Ordonner la population suivant l'avant derniere colonne (fitness)
+                ind = np.argsort( population[:,tailleIndividu] *-1)
+                population= population[ind]
+                # supprimer les individus les plus mauvais 
+                population=population[:-2]
+                # Mettre a jour l'age de la population 
+                population[:,-1]=population[:,-1]+1 
+
+            elif (insertion == 0):
+                # insertion suivant l'age (les plus agés)
+                # Ordonner la population suivant la derniere colonne (age de l'individu)
+                ind = np.argsort( population[:,tailleIndividu+1] *1)
+                population= population[ind]
+                
+                # supprimer les individus les plus mauvais par age
+                population=population[:-2]
+                # Mettre a jour l'age de la population 
+                population[:,-1]=population[:,-1]+1
+            else : 
+                print('valeur de mutation non reconnu')
+
+            # remplacer les individus supprimés par les nouveaux enfants 
+            population = np.append(population,np.array([fils1,fils2]),axis=0) 
+        else : 
+            # ne rien faire (pas d'insertion de nouveaux individus)
+            # Mettre a jour l'age de la population 
+            population[:,-1]=population[:,-1]+1
+        
+
+        # ============================= SAUVGARDE =======================
+        
+        if (bool(save)): f.write(str(it) + "\t" + str(population[0,tailleIndividu]) + "\n")
+
+
+
+
+        ind = np.argsort( population[:,tailleIndividu] *-1)
+        population= population[ind]
+
+        if (population[0,tailleIndividu]== tailleIndividu): 
+            trouve = True
+        if (bool(print_log)):
+            print ("============== Iteration ",it," ==============")
+            print ("best score : ", population[0,tailleIndividu] ) # meilleur individu
+            #print ("best ind : ", population[0,:] )
+            #print('---------------- THIS THE NEW POP --------------------------------')
+            #print(population)
+        its.append(it)
+        bests.append(population[0,tailleIndividu])
+
+
+    #=====================  PLOTING  =====================
     
+    if (f != None): f.close()
+    if (bool(plot)):
+        if (bool(print_log)): print('Ploting ...')
+        X, Y = [], []
+        for line in open(nom_fichier, "r"):
+            values = [int(s) for s in line.split()]
+            X.append(values[0])
+            Y.append(values[1])
+        plt.plot(X,Y)
+        plt.savefig(nom_fichier+".png")
+        plt.show()
+    if (bool(print_log)): print('Finished')
+    return its,bests
 
-    # ============================= INSERTION =======================
 
 
-    print('---------------- THIS THE NEW POP --------------------------------')
-    print(population)
-    
-    print('Finished')
-    return 0
-
-
-
-AG  ( taillePopulation =10 , tailleIndividu = 10, init = 1, selection = 2 , croisement = 0 , prob_croisement = 0, mutation = 4 , prob_mutation = 1 , insertion = 1 , nb_generation = 100)
+#out = AG  (taillePopulation =20 , tailleIndividu = 100, init = 1, selection = 2 , croisement = 2 , prob_croisement = 0.5, mutation = 2 , prob_mutation = 0.5 , insertion = 1 , nb_generation = 1000, print_log = 1, save = 1 ,plot=1, nom_fichier= "resultat" )
+#print(out)
+#AG()
 """
     taillePopulation : la taille de la population  # par defaut 100
     tailleIndividu : la taille de l'individu # par defaut 10 
@@ -384,5 +441,16 @@ AG  ( taillePopulation =10 , tailleIndividu = 10, init = 1, selection = 2 , croi
         0 : remplacer les individus les plus agés
         1 : remplacer les individus les plus mauvais # la valeur par defaut
     nb_generation : nombre de generation auquel on veut arreter l'algorithme génetique (critère d'arret) # la valeur par defaut 100
-    sauvgarde : ....
+    print_log : afficher ou non le log de l'execution 
+        0 : ne pas afficher
+        1 : afficher
+    save : sauvegarder ou pas l'hitorique des iterations
+        0 : ne pas sauvgarder
+        1 : sauvgarder # la valeur par defaut 
+    plot : tracer le graphe des iterations en fonction de meilleur individu
+        0 : ne pas tracer le graphe
+        1 : tracer le graphe
+    nom_fichier : string contenant le nom du fichier de données nom_fichier".txt" et le nom de graph nom_fichier".png" # la valeur par defaut "data"
+ 
     """
+#https://subscription.packtpub.com/book/big_data_and_business_intelligence/9781849513265/1/ch01lvl1sec13/plotting-curves-from-file-data
