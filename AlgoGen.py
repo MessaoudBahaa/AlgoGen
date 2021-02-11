@@ -412,7 +412,7 @@ def AG  ( taillePopulation =10 , tailleIndividu = 10, init = 1, selection = 0 , 
 
 
 
-#out = AG  (taillePopulation =20 , tailleIndividu = 100, init = 1, selection = 2 , croisement = 2 , prob_croisement = 0.5, mutation = 2 , prob_mutation = 0.5 , insertion = 1 , nb_generation = 1000, print_log = 1, save = 1 ,plot=1, nom_fichier= "resultat" )
+#out = AG  (taillePopulation =20 , tailleIndividu = 200, init = 1, selection = 2 , croisement = 2 , prob_croisement = 0.5, mutation = 2 , prob_mutation = 0.5 , insertion = 1 , nb_generation = 2000, print_log = 1, save = 1 ,plot=1, nom_fichier= "resultat" )
 #print(out)
 #AG()
 """
